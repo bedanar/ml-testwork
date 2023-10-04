@@ -12,7 +12,7 @@ import sys
 from dataclasses import dataclass
 from typing import TypeAlias
 
-sys.setrecursionlimit(100 * 100 * 5)
+sys.setrecursionlimit(100 * 100 * 10)
 
 
 @dataclass(frozen=True, eq=True, order=True)
@@ -80,15 +80,23 @@ class Graph:
             ])
 
     def _euler_path(self, node: Node):
-        while (cur_occure := self._occure_graph[node.x][node.y]) < len(self._ALL_FRONT_MOVES):
-            cur_dist = self._ALL_FRONT_MOVES[cur_occure]
-            new_node = Node(node.x + cur_dist[0], node.y + cur_dist[1])
-            self._occure_graph[node.x][node.y] += 1
-            edge = (node, new_node)
-            if edge not in self._forbidden_edges and self._valid_node(new_node):
-                self.make_edge_forbidden(edge)
-                self._euler_path(new_node)
-                self._path.append(node)
+        stack = [node]
+        while len(stack):
+            cur_node = stack[-1]
+            found_node = False
+            while (cur_occure := self._occure_graph[cur_node.x][cur_node.y]) < len(self._ALL_FRONT_MOVES):
+                cur_dist = self._ALL_FRONT_MOVES[cur_occure]
+                new_node = Node(cur_node.x + cur_dist[0], cur_node.y + cur_dist[1])
+                self._occure_graph[cur_node.x][cur_node.y] += 1
+                edge = (cur_node, new_node)
+                if edge not in self._forbidden_edges and self._valid_node(new_node):
+                    self.make_edge_forbidden(edge)
+                    found_node = True
+                    stack.append(new_node)
+                    break
+            if not found_node:
+                stack.pop()
+                self._path.append(cur_node)
 
     def make_edges_forbidden(self, edges: list[Edge]):
         # map(self.make_edge_forbidden, edges)
